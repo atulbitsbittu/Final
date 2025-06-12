@@ -18,25 +18,21 @@ def get_data(interval):
     return data.dropna()
 
 def add_technical_indicators(df):
-    close_series = df["Close"]
-    if isinstance(close_series, pd.DataFrame):
-        close_series = close_series.iloc[:, 0]
+    close_series = df["Close"].squeeze()
 
     # Calculate indicators
     rsi = ta.momentum.RSIIndicator(close=close_series).rsi()
     macd = ta.trend.MACD(close=close_series).macd_diff()
     ema_20 = ta.trend.EMAIndicator(close=close_series, window=20).ema_indicator()
 
-    # Assign to DataFrame
+    # Assign indicators
     df["rsi"] = rsi
     df["macd"] = macd
     df["ema_20"] = ema_20
 
-    # Safe comparison
-    valid = df[["Close", "ema_20"]].dropna()
-    signal = (valid["Close"] > valid["ema_20"])
-    signal.name = "ema_signal"
-    df["ema_signal"] = signal.reindex(df.index)
+    # Ensure ema_signal is aligned and not NaN
+    df["ema_signal"] = (df["Close"] > df["ema_20"])
+    df["ema_signal"] = df["ema_signal"].fillna(False)
 
     return df
 
